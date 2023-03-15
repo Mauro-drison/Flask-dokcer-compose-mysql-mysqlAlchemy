@@ -1,0 +1,78 @@
+# Author: Mazhar Ahmed, CTO, Oceanize Inc
+# All rights reserved. Copyright (c) Oceanize Inc
+version: '3'
+services:
+  app:
+    image: app_comercio/flask_app:latest
+    container_name: flask_app_comer
+    restart: unless-stopped
+    labels:
+      project: "app_flask"
+      day: "4 mar 2023"
+    build:
+      # build the image from Dockerfile
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      FLASK_DEBUG: "true"
+      # set database, memcached etc credentials
+      DB_HOST: mysql
+      DB_NAME: flask
+      DB_USER: flask
+      DB_PASSWORD: 43509910
+      MYSQL_ROOT_PASSWORD: 43509910
+    volumes:
+      - ./app:/app
+    links:
+      # network connection with these services
+      - mysql
+    depends_on:
+      # build those images first
+      - mysql
+    entrypoint: /app/entrypoint.sh
+    ports:
+      # bind on our 5000 port because most people have 80, 8080 already bound
+      - "5000:5000"
+
+  mysql:
+    container_name: flask_mysql
+    # let's grab from mysql 5.7 image
+    image: mysql:5.7
+    volumes:
+      - ./mysql:/docker-entrypoint-initdb.d/:ro
+    restart: unless-stopped
+    labels:
+      project: "db_flask"
+      day: "4 mar 2023"
+    # ports:
+    #   - "3306:3306"
+    environment:
+      # credentials
+      MYSQL_ROOT_PASSWORD: 43509910
+      MYSQL_DATABASE: flask
+      MYSQL_USER: flask
+      MYSQL_PASSWORD: 43509910
+    
+
+  phpmyadmin:
+    depends_on:
+      - mysql
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: flask_phpmyadmin
+    restart: unless-stopped
+    labels:
+      project: "flask_php"
+      day: "4 mar 2023"
+    ports:
+      - "5010:80"
+    environment:
+      PMA_HOST: mysql
+      PMA_USER: flask
+      PMA_PASSWORD: 43509910
+      MYSQL_ROOT_PASSWORD: 43509910
+
+# volumes definition here
+volumes:
+  # just a persistance data
+  mysql-data:
+    driver: local
