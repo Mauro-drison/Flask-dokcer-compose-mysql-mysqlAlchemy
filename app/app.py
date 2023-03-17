@@ -7,6 +7,7 @@ from sqlalchemy.types import DateTime, Float, Integer
 from flask_migrate import Migrate
 from serializers import AlchemyEncoder
 import datetime
+from datetime import date
 # create an instance of flask
 app = Flask(__name__)
 # creating an API object
@@ -27,6 +28,9 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 #Para generar tablas
 migrate = Migrate(app, db)
+fecha_actual = date.today()
+print(fecha_actual)
+print(type(fecha_actual))
 
 # models
 class Product(db.Model):
@@ -36,34 +40,36 @@ class Product(db.Model):
     name = db.Column("name", db.String(100))
     image = db.Column("image", db.String(200))
     price = db.Column("price", db.Float)
-    stard_date = db.Column("start_date", DateTime)
+    start_date = db.Column("start_date", DateTime)
     ending_date = db.Column("ending_date", DateTime)
     quantity = db.Column("quantity", db.Integer)
     #datetime = db.Column("datetime", DateTime)
     def __repr__(self):
-        return f"({self.id}) name: {self.name}, price: {self.price}, stard_date: {self.stard_date}, ending_date: {self.ending_date}, quantity: {self.quantity}, image: {self.image}"
+        return f"({self.id}) name: {self.name}, price: {self.price}, start_date: {self.start_date}, ending_date: {self.ending_date}, quantity: {self.quantity}, image: {self.image}"
     
 # For GET request to http://localhost:5000/product
 class GetProduct(Resource):
     def get(self):
         products= Product.query.all()
         prod_list = []
+        
         for prod in products:
-            una_fecha = prod.stard_date.strftime('%y/%m/%d')
+            una_fecha = prod.start_date.strftime('%y/%m/%d')
             seg_fecha = prod.ending_date.strftime('%y/%m/%d')
-            prod_data = {'id': prod.id, 'name': prod.name,'price': prod.price, 'stard_date': una_fecha, 'ending_date': seg_fecha, 'quantity': prod.quantity, 'image': prod.image}
+            prod_data = {'id': prod.id, 'name': prod.name,'price': prod.price, 'start_date': una_fecha, 'ending_date': seg_fecha, 'quantity': prod.quantity, 'image': prod.image}
             prod_list.append(prod_data)
         return {"products": prod_list}, 200
 
 # For Post request to http://localhost:5000/product
 class AddProduct(Resource):
     def post(self):
+        fecha_actual = date.today()
         if request.is_json:
-            prod = Product(name=request.json['name'], price=request.json['price'],quantity=request.json['quantity'])
+            prod = Product(name=request.json['name'], price=request.json['price'],start_date=fecha_actual , ending_date=fecha_actual, quantity=request.json['quantity'], image=request.json['image'])
             db.session.add(prod)
             db.session.commit()
             # return a json response
-            return make_response(jsonify({'id': prod.id, 'name': prod.name,'price': prod.price,'quantity': prod.quantity}), 201)
+            return make_response(jsonify({'id': prod.id, 'name': prod.name,'price': prod.price,'start_date':prod.start_date,'ending_date':prod.ending_date,'quantity': prod.quantity}), 201)
         else:
             return {'error': 'Request must be JSON'}, 400
 
